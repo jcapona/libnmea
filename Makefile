@@ -1,20 +1,42 @@
-VPATH=src
-SRC_FILES=nmea.c parse.c gpgga.c gpgll.c
-OBJ_FILES=$(patsubst %.c, %.o, $(SRC_FILES))
-CC=gcc
-CFLAGS=-c -fPIC -g -Wall
-LDFLAGS=-s -shared -Wl,--no-as-needed,-soname,libnmea.so -Wall -g
+# This Makefile is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
 
-nmea:	$(OBJ_FILES)
-	$(CC) $(LDFLAGS) $(OBJ_FILES) -o libnmea.so
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
 
-%.o: %.c
-	$(CC) $(CFLAGS) $< -o $@
+# Authors: Felipe Ortiz
+# Version: 0.9
 
-test:
-	$(CC) test.c -I./src/ -L. -lnmea -o test
+CXX=g++ -std=c++11
+INCLUDES=-Iinclude
+CXXOPTS=-Wall -g -O2
+CXXFLAGS=$(CXXOPTS) $(INCLUDES)
+LDFLAGS=
+LDLIBS=
+# Where .a file must be created
+LIB=lib/libnmea.a
+
+default: all
+# Object files
+OBJS=src/nmea.o src/parse.o src/gpgga.o src/gpgll.o
+
+all: lib $(LIB)
+
+lib:
+	mkdir lib
+
+$(LIB): $(LIB)($(OBJS))
 
 clean:
-	@rm -f *.o
-	@rm -f libnmea.so
-	@rm -f test
+	rm -f lib/*.a src/*.o
+
+%.d: %.cc
+	$(CXX) -MM -MP -MF $@ -MT "$(@:.d=.o) $@" $(INCLUDES) $<
+
+ifneq "$(MAKECMDGOALS)" "clean"
+ -include $(OBJS:.o=.d)
+endif
+
