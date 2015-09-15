@@ -1,51 +1,61 @@
+#include <libnmea/nmea.h>
+#include <libnmea/gpgll.h>
+#include <libnmea/gpgga.h>
+
+#include <serial/serial.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <nmea.h>
-#include <gpgll.h>
-#include <gpgga.h>
+#include <unistd.h>
 
-int
-main(void)
+
+int main(void)
 {
 	int gps_fd;
 	int read_bytes, total_bytes = 0;
 	char *buffer, *start, *end;
 
-	buffer = malloc(4096);
-	if (NULL == buffer) {
+	buffer = (char*) malloc(4096);
+	if (NULL == buffer) 
+	{
 		perror("malloc buffer");
 		exit(EXIT_FAILURE);
 	}
-
-	gps_fd = 0; // stdin
-	//gps_fd = open("/dev/ttyUSB0", O_RDONLY);
-	if (-1 == gps_fd) {
+	
+	gps_fd = open("/dev/ttyUSB0", O_RDONLY);
+	if (-1 == gps_fd) 
+	{
 		perror("open ttyUSB0");
 		exit(EXIT_FAILURE);
 	}
 
-	while (1) {
+	while (1) 
+	{
 		read_bytes = read(gps_fd, buffer + total_bytes, 20);
-		if (-1 == read_bytes) {
+		
+		if (-1 == read_bytes) 
+		{
 			perror("read ttyUSB0");
 			exit(EXIT_FAILURE);
 		}
 		total_bytes += read_bytes;
 
 		/* find start (a dollar $ign) */
-		start = memchr(buffer, '$', total_bytes);
-		if (NULL == start) {
+		start = (char*) memchr(buffer, '$', total_bytes);
+		if (NULL == start) 
+		{
 			total_bytes = 0;
 			continue;
 		}
 
 		/* find end of line */
-		end = memchr(start, NMEA_END_CHAR_1, total_bytes - (start - buffer));
-		if (NULL == end || NMEA_END_CHAR_2 != *(++end)) {
+		end = (char*) memchr(start, NMEA_END_CHAR_1, total_bytes - (start - buffer));
+		if (NULL == end || NMEA_END_CHAR_2 != *(++end)) 
+		{
 			continue;
 		}
 
@@ -53,29 +63,34 @@ main(void)
 		nmea_t type = nmea_get_type(start);
 		nmea_s *data;
 		char buf[255];
-		switch (type) {
+		switch (type) 
+		{
 			case NMEA_UNKNOWN:
 				break;
 			case NMEA_GPGGA:
 			case NMEA_GPGLL:
 				data = nmea_parse(start, end - start + 1, type, 0);
-				if (NULL == data) {
+				if (NULL == data) 
+				{
 					printf("Could not parse sentence\n");
 					break;
 				}
 
-				if (0 < data->errors) {
+				if (0 < data->errors) 
+				{
 					printf("WARN: The sentence struct contains parse errors!\n");
 				}
 
-				if (NMEA_GPGGA == data->type) {
+				if (NMEA_GPGGA == data->type)
+			 {
 					printf("GPGGA sentence\n");
 					nmea_gpgga_s *gpgga = (nmea_gpgga_s *) data;
 					printf("Number of satellites: %d\n", gpgga->n_satellites);
 					printf("Altitude: %d %c\n", gpgga->altitude, gpgga->altitude_unit);
 				}
 
-				if (NMEA_GPGLL == data->type) {
+				if (NMEA_GPGLL == data->type) 
+				{
 					printf("GPGLL sentence\n");
 					nmea_gpgll_s *pos = (nmea_gpgll_s *) data;
 					printf("Longitude:\n");
@@ -96,13 +111,15 @@ main(void)
 		}
 
 		/* buffer empty? */
-		if (end == buffer + total_bytes) {
+		if (end == buffer + total_bytes) 
+		{
 			total_bytes = 0;
 			continue;
 		}
 
 		/* copy rest of buffer to beginning */
-		if (buffer != memmove(buffer, end, total_bytes - (end - buffer))) {
+		if (buffer != memmove(buffer, end, total_bytes - (end - buffer))) 
+		{
 			total_bytes = 0;
 			continue;
 		}

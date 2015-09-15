@@ -1,28 +1,29 @@
-#include "nmea.h"
-#include "gpgll.h"
-#include "gpgga.h"
+#include <libnmea/nmea.h>
+#include <libnmea/gpgll.h>
+#include <libnmea/gpgga.h>
 
-nmea_t
-nmea_get_type(const char *sentence)
+nmea_t nmea_get_type(const char *sentence)
 {
-	if (0 == strncmp(sentence + 1, NMEA_PREFIX_GPGLL, NMEA_PREFIX_LENGTH)) {
+	if (0 == strncmp(sentence + 1, NMEA_PREFIX_GPGLL, NMEA_PREFIX_LENGTH))
+	{
 		return NMEA_GPGLL;
 	}
 
-	if (0 == strncmp(sentence + 1, NMEA_PREFIX_GPGGA, NMEA_PREFIX_LENGTH)) {
+	if (0 == strncmp(sentence + 1, NMEA_PREFIX_GPGGA, NMEA_PREFIX_LENGTH))
+	{
 		return NMEA_GPGGA;
 	}
 
 	return NMEA_UNKNOWN;
 }
 
-char
-nmea_get_checksum(const char *sentence)
+char nmea_get_checksum(const char *sentence)
 {
 	const char *n = sentence + 1;
 	char chk = 0;
 
-	while (*n != '*' && n - sentence < NMEA_MAX_LENGTH) {
+	while (*n != '*' && n - sentence < NMEA_MAX_LENGTH)
+	{
 		chk ^= *n;
 		n++;
 	}
@@ -30,8 +31,7 @@ nmea_get_checksum(const char *sentence)
 	return chk;
 }
 
-int
-nmea_has_checksum(const char *sentence, int length)
+int nmea_has_checksum(const char *sentence, int length)
 {
 	if ('*' == sentence[length - 5]) {
 		return 0;
@@ -40,35 +40,40 @@ nmea_has_checksum(const char *sentence, int length)
 	return -1;
 }
 
-int
-nmea_validate(const char *sentence, int length, int check_checksum)
+int nmea_validate(const char *sentence, int length, int check_checksum)
 {
 	/* should start with $ */
-	if ('$' != *sentence) {
+	if ('$' != *sentence) 
+	{
 		return -1;
 	}
 
 	/* should end with \r\n, or other... */
-	if ('\n' != sentence[length - 1] || '\n' != sentence[length - 2]) {
+	if ('\n' != sentence[length - 1] || '\n' != sentence[length - 2]) 
+	{
 		return -1;
 	}
 
 	/* should have a 5 letter, uppercase word */
 	const char *n = sentence;
-	while (++n < sentence + 6) {
-		if (*n < 65 || *n > 90) {
+	while (++n < sentence + 6) 
+	{
+		if (*n < 65 || *n > 90) 
+		{
 			/* not uppercase letter */
 			return -1;
 		}
 	}
 
 	/* should have a comma after the type word */
-	if (',' != sentence[6]) {
+	if (',' != sentence[6]) 
+	{
 		return -1;
 	}
 
 	/* check for checksum */
-	if (1 == check_checksum && 0 == nmea_has_checksum(sentence, length)) {
+	if (1 == check_checksum && 0 == nmea_has_checksum(sentence, length)) 
+	{
 		char actual_chk;
 		long int expected_chk;
 		char checksum[3];
@@ -86,10 +91,10 @@ nmea_validate(const char *sentence, int length, int check_checksum)
 	return 0;
 }
 
-nmea_s *
-nmea_parse(char *sentence, int length, nmea_t type, int check_checksum)
+nmea_s* nmea_parse(char *sentence, int length, nmea_t type, int check_checksum)
 {
-	if (NMEA_UNKNOWN == type) {
+	if (NMEA_UNKNOWN == type) 
+	{
 		return (nmea_s *) NULL;
 	}
 
@@ -99,30 +104,36 @@ nmea_parse(char *sentence, int length, nmea_t type, int check_checksum)
 	char *values[200];
 	nmea_sentence_parser_s *parser;
 
-	if (-1 == nmea_validate(sentence, length, check_checksum)) {
+	if (-1 == nmea_validate(sentence, length, check_checksum)) 
+	{
 		return (nmea_s *) NULL;
 	}
 
 	n_vals = nmea_sentence_split(sentence, length, values);
-	if (0 == n_vals) {
+	if (0 == n_vals) 
+	{
 		return (nmea_s *) NULL;
 	}
 
 	/* Allocate parser struct */
-	parser = malloc(sizeof(nmea_sentence_parser_s));
-	if (NULL == parser) {
+	parser = (nmea_sentence_parser_s*) malloc(sizeof(nmea_sentence_parser_s));
+	if (NULL == parser) 
+	{
 		return (nmea_s *) NULL;
 	}
 
-	switch (type) {
+	switch (type) 
+	{
 		case NMEA_GPGGA:
-			if (-1 == nmea_gpgga_init(parser)) {
+			if (-1 == nmea_gpgga_init(parser)) 
+			{
 				return (nmea_s *) NULL;
 			}
 			break;
 
 		case NMEA_GPGLL:
-			if (-1 == nmea_gpgll_init(parser)) {
+			if (-1 == nmea_gpgll_init(parser)) 
+			{
 				return (nmea_s *) NULL;
 			}
 			break;
@@ -132,14 +143,17 @@ nmea_parse(char *sentence, int length, nmea_t type, int check_checksum)
 	}
 
 	/* Loop through the values and parse them... */
-	while (val_index < n_vals) {
+	while (val_index < n_vals) 
+	{
 		value = values[val_index];
-		if (-1 == nmea_value_is_set(value)) {
+		if (-1 == nmea_value_is_set(value)) 
+		{
 			val_index++;
 			continue;
 		}
 
-		if (-1 == parser->parse(value, val_index, parser->data)) {
+		if (-1 == parser->parse(value, val_index, parser->data)) 
+		{
 			parser->errors++;
 		}
 

@@ -1,34 +1,41 @@
-#include "parse.h"
+#include <libnmea/parse.h>
 
-int
-nmea_sentence_split(char *sentence, int length, char **values)
+int nmea_sentence_split(char *sentence, int length, char **values)
 {
 	char *cursor = sentence + 7; // skip type word
 	int i = 0;
 
 	values[i++] = cursor;
-	while (cursor != NULL && cursor - sentence < length) {
+	while (cursor != NULL && cursor - sentence < length) 
+	{
 		cursor = (char *) memchr(cursor, ',', length - (cursor - sentence));
-		if (NULL == cursor) {
+		if (NULL == cursor) 
+		{
 			break;
 		}
 
 		*cursor = '\0';
 		cursor++;
-		if (*cursor == ',') {
-		    	  values[i++] = NULL;
-		} else {
-		    	  values[i++] = cursor;
+		if (*cursor == ',') 
+		{
+		 values[i++] = NULL;
+		} 
+		else 
+		{
+		 values[i++] = cursor;
 		}
 	}
 
 	/* null terminate the last value */
 	cursor = values[i - 1];
 	cursor = (char *) memchr(cursor, '*', length - (cursor - sentence));
-	if (NULL != cursor) {
+	if (NULL != cursor) 
+	{
 		/* has checksum */
 		*cursor = '\0';
-	} else {
+	} 
+	else 
+	{
 		/* no checksum */
 		sentence[length - 2] = '\0';
 	}
@@ -36,29 +43,30 @@ nmea_sentence_split(char *sentence, int length, char **values)
 	return i;
 }
 
-int
-nmea_value_is_set(char *value)
+int nmea_value_is_set(char *value)
 {
-	if (NULL == value || '\0' == *value) {
+	if (NULL == value || '\0' == *value) 
+	{
 		return -1;
 	}
 
 	return 0;
 }
 
-int
-nmea_position_parse(char *s, nmea_position *pos)
+int nmea_position_parse(char *s, nmea_position *pos)
 {
 	pos->degrees = 0;
 	pos->minutes = 0;
 
-	if (s == NULL || *s == '\0') {
+	if (s == NULL || *s == '\0') 
+	{
 		return -1;
 	}
 
 	// decimal minutes
-	char *cursor = memchr(s, '.', strlen(s));
-	if (NULL == cursor) {
+	char *cursor = (char*) memchr(s, '.', strlen(s));
+	if (NULL == cursor) 
+	{
 		return -1;
 	}
 
@@ -73,14 +81,15 @@ nmea_position_parse(char *s, nmea_position *pos)
 	return 0;
 }
 
-nmea_cardinal_t
-nmea_cardinal_direction_parse(char *s)
+nmea_cardinal_t nmea_cardinal_direction_parse(char *s)
 {
-	if (s == NULL || *s == '\0') {
+	if (s == NULL || *s == '\0') 
+	{
 		return NMEA_CARDINAL_DIR_UNKNOWN;
 	}
 
-	switch (*s) {
+	switch (*s) 
+	{
 		case NMEA_CARDINAL_DIR_NORTH:
 			return NMEA_CARDINAL_DIR_NORTH;
 		case NMEA_CARDINAL_DIR_EAST:
@@ -96,18 +105,19 @@ nmea_cardinal_direction_parse(char *s)
 	return NMEA_CARDINAL_DIR_UNKNOWN;
 }
 
-int
-nmea_time_parse(char *s, struct tm *time)
+int nmea_time_parse(char *s, struct tm *time)
 {
 	char *rv;
 	memset(time, 0, sizeof(struct tm));
 
-	if (s == NULL || *s == '\0') {
+	if (s == NULL || *s == '\0') 
+	{
 		return -1;
 	}
 
 	rv = strptime(s, NMEA_TIME_FORMAT, time);
-	if (NULL == rv || (int) (rv - s) != NMEA_TIME_FORMAT_LEN) {
+	if (NULL == rv || (int) (rv - s) != NMEA_TIME_FORMAT_LEN) 
+	{
 		return -1;
 	}
 
